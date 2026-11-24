@@ -1,0 +1,10 @@
+=== LABELS (ROM Addresses) ===
+LOOP = 0
+ERASE = 8
+DRAW = 10
+ROW_LOOP = 20
+
+=== VARIABLES (RAM Addresses) ===
+color = 16
+addr = 17
+count = 18

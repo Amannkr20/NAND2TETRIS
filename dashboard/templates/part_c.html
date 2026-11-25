@@ -19,7 +19,7 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <span class="text-xs px-3 py-1 rounded-full bg-slate-950 text-indigo-300 font-mono border border-indigo-800">
+            <span id="specSummary" class="text-xs px-3 py-1 rounded-full bg-slate-950 text-indigo-300 font-mono border border-indigo-800">
                 Specification: Row 72 • 16×20 px • Base 18688
             </span>
         </div>
@@ -105,19 +105,19 @@
                 <div class="grid grid-cols-2 gap-3 text-xs font-mono">
                     <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80">
                         <span class="text-slate-400 text-[10px] block">1. Starting Row</span>
-                        <span class="text-cyan-400 font-bold">K = 72</span>
+                        <span id="checkStartingRow" class="text-cyan-400 font-bold">K = 72</span>
                     </div>
                     <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80">
                         <span class="text-slate-400 text-[10px] block">2. Box Height</span>
-                        <span class="text-cyan-400 font-bold">20 Rows (72..91)</span>
+                        <span id="checkBoxHeight" class="text-cyan-400 font-bold">20 Rows (72..91)</span>
                     </div>
                     <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80">
                         <span class="text-slate-400 text-[10px] block">3. Box Width</span>
-                        <span class="text-cyan-400 font-bold">16 Pixels (1 Word)</span>
+                        <span id="checkBoxWidth" class="text-cyan-400 font-bold">16 Pixels (1 Word)</span>
                     </div>
                     <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80">
                         <span class="text-slate-400 text-[10px] block">4. Base Screen Addr</span>
-                        <span class="text-cyan-400 font-bold">SCREEN + 2304 = 18688</span>
+                        <span id="checkBaseAddr" class="text-cyan-400 font-bold">SCREEN + 2304 = 18688</span>
                     </div>
                 </div>
             </div>
@@ -128,11 +128,21 @@
 
 {% block scripts %}
 <script>
-    const defaultBoxAsm = `// Box.asm — Draw a 16x20 black box at row 72 (K = 72) while any key is pressed
-// Student: Aman Kumar | Roll No: 2501730172 | K = 72
-// Starting row = K = 72 -> offset = 32 * 72 = 2304 -> SCREEN + 2304 = 18688
-// Height = 20 rows (rows 72..91)
-// Width = 16 * ((72 mod 4) + 1) = 16 pixels (1 word per row, left edge)
+    let student = getSavedStudentState();
+
+    function generateBoxAsm(kVal) {
+        const k = parseInt(kVal) || 72;
+        const widthPx = 16 * ((k % 4) + 1);
+        const words = (k % 4) + 1;
+        const offset = 32 * k;
+        const baseAddr = 16384 + offset;
+        const rollNum = student.roll || '2501730172';
+
+        return `// Box.asm — Draw a ${widthPx}x20 black box at row ${k} (K = ${k}) while any key is pressed
+// Student: Aman Kumar | Roll No: ${rollNum} | K = ${k}
+// Starting row = K = ${k} -> offset = 32 * ${k} = ${offset} -> SCREEN + ${offset} = ${baseAddr}
+// Height = 20 rows (rows ${k}..${k + 19})
+// Width = 16 * ((${k} mod 4) + 1) = ${widthPx} pixels (${words} word${words > 1 ? 's' : ''} per row, left edge)
 
 (LOOP)
     @KBD
@@ -152,10 +162,10 @@
 (DRAW)
     @SCREEN
     D=A
-    @2304           // 32 * 72 = 2304
+    @${offset}           // 32 * ${k} = ${offset}
     D=D+A
     @addr
-    M=D             // addr = SCREEN + 2304 (row 72, left edge)
+    M=D             // addr = SCREEN + ${offset} (row ${k}, left edge)
 
     @20
     D=A
@@ -184,13 +194,15 @@
 
     @ROW_LOOP
     0;JMP`;
+    }
 
     const editor = document.getElementById('boxCodeEditor');
-    editor.value = defaultBoxAsm;
 
     function resetDefaultBox() {
-        editor.value = defaultBoxAsm;
+        student = getSavedStudentState();
+        editor.value = generateBoxAsm(student.k);
         updateLineCount();
+        updateChecklistUI();
     }
 
     function updateLineCount() {
@@ -198,6 +210,25 @@
         document.getElementById('boxEditorLines').textContent = `${count} lines`;
     }
     editor.addEventListener('input', updateLineCount);
+
+    function updateChecklistUI() {
+        const k = student.k !== undefined ? student.k : 72;
+        const w = student.box_width || (16 * ((k % 4) + 1));
+        const words = (k % 4) + 1;
+        const baseAddr = 16384 + (32 * k);
+
+        const checkStartingRow = document.getElementById('checkStartingRow');
+        const checkBoxHeight = document.getElementById('checkBoxHeight');
+        const checkBoxWidth = document.getElementById('checkBoxWidth');
+        const checkBaseAddr = document.getElementById('checkBaseAddr');
+        const specSummary = document.getElementById('specSummary');
+
+        if (checkStartingRow) checkStartingRow.textContent = `K = ${k}`;
+        if (checkBoxHeight) checkBoxHeight.textContent = `20 Rows (${k}..${k + 19})`;
+        if (checkBoxWidth) checkBoxWidth.textContent = `${w} Pixels (${words} Word${words > 1 ? 's' : ''})`;
+        if (checkBaseAddr) checkBaseAddr.textContent = `SCREEN + ${32 * k} = ${baseAddr}`;
+        if (specSummary) specSummary.textContent = `Specification: Row ${k} • ${w}×20 px • Base ${baseAddr}`;
+    }
 
     // Canvas drawing
     const canvas = document.getElementById('partCCanvas');
@@ -212,26 +243,33 @@
     let isLockedOn = false;
 
     function renderPartCScreen() {
+        const k = student.k !== undefined ? student.k : 72;
+        const boxW = student.box_width || (16 * ((k % 4) + 1));
+        const boxH = student.box_height || 20;
+        const rollNum = student.roll || '2501730172';
+
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, 512, 256);
 
-        // row 72 subtle dashed line
+        // subtle line at row K
         ctx.strokeStyle = '#e2e8f0';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, 72);
-        ctx.lineTo(512, 72);
+        ctx.moveTo(0, k);
+        ctx.lineTo(512, k);
         ctx.stroke();
 
         if (isKeyDown) {
-            // Draw 16x20 black box at (0, 72)
+            // Draw box at (0, k)
             ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 72, 16, 20);
+            ctx.fillRect(0, k, boxW, boxH);
 
             emulStatus.textContent = 'KEY ACTIVE (BOX DISPLAYED)';
             emulStatus.className = 'text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800';
             kbdStatusIndicator.textContent = 'Key Active (75)';
             kbdStatusIndicator.className = 'text-xs font-mono text-emerald-400 font-bold';
+            
+            rollPop.textContent = `🎓 ROLL NO: ${rollNum} (K=${k})`;
             rollPop.classList.remove('hidden');
         } else {
             emulStatus.textContent = 'WAITING FOR KEY';
@@ -291,8 +329,17 @@
         }
     }
 
+    window.addEventListener('storage', () => {
+        student = getSavedStudentState();
+        resetDefaultBox();
+        renderPartCScreen();
+    });
+
     // Initial render
-    renderPartCScreen();
-    updateLineCount();
+    document.addEventListener('DOMContentLoaded', () => {
+        student = getSavedStudentState();
+        resetDefaultBox();
+        renderPartCScreen();
+    });
 </script>
 {% endblock %}

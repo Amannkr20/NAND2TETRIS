@@ -40,7 +40,7 @@
                         HACK COMPUTER DASHBOARD
                         <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-900/80 text-cyan-300 font-mono border border-cyan-700">Nand2Tetris Capstone</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Student: Aman Kumar | Roll No: 2501730172 | K = 72</p>
+                    <p class="text-xs text-slate-400" id="globalStudentInfo">Student: Aman Kumar | Roll No: <span id="globalRoll" class="text-cyan-400 font-bold font-mono">2501730172</span> | K = <span id="globalK" class="text-emerald-400 font-bold font-mono">72</span></p>
                 </div>
             </div>
 
@@ -72,6 +72,46 @@
         <p>Hack Computer Capstone Dashboard & Simulator • Department of Computer Science & Engineering</p>
         <p class="mt-1">Nand to Tetris – I (ETCNTC301) • Hardware, Assembler, and Display Subsystem</p>
     </footer>
+
+    <script>
+        // Global State Synchronizer across all pages
+        function getSavedStudentState() {
+            try {
+                const raw = localStorage.getItem('hack_capstone_student');
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return {
+                roll: '2501730172',
+                k: 72,
+                box_width: 16,
+                box_height: 20,
+                starting_row: 72,
+                base_addr: 18688,
+                words_per_row: 1,
+                k_mod_3: 0,
+                k_mod_4: 0
+            };
+        }
+
+        function saveStudentState(data) {
+            try {
+                localStorage.setItem('hack_capstone_student', JSON.stringify(data));
+                updateGlobalHeaderUI(data);
+            } catch (e) {}
+        }
+
+        function updateGlobalHeaderUI(data) {
+            const elRoll = document.getElementById('globalRoll');
+            const elK = document.getElementById('globalK');
+            if (elRoll && data.roll) elRoll.textContent = data.roll;
+            if (elK && data.k !== undefined) elK.textContent = data.k;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const st = getSavedStudentState();
+            updateGlobalHeaderUI(st);
+        });
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

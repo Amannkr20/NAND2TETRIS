@@ -172,6 +172,31 @@
 {% block scripts %}
 <script>
     const form = document.getElementById('kForm');
+
+    function populateUI(d) {
+        document.getElementById('rollInput').value = d.roll;
+        document.getElementById('badgeRoll').textContent = `Roll: ${d.roll}`;
+        document.getElementById('resK').textContent = d.k;
+        document.getElementById('resRow').textContent = `Row ${d.starting_row}`;
+        document.getElementById('resDims').textContent = `${d.box_width} × ${d.box_height}`;
+        document.getElementById('resAddr').textContent = d.base_addr;
+        document.getElementById('resWords').textContent = `${d.words_per_row} Word${d.words_per_row > 1 ? 's' : ''}`;
+        document.getElementById('resKMod3').textContent = `K mod 3 = ${d.k_mod_3}`;
+        if (d.feature_desc) document.getElementById('resFeature').textContent = d.feature_desc;
+
+        // Highlight table row
+        [0, 1, 2, 3].forEach(idx => {
+            const el = document.getElementById(`row-k${idx}`);
+            if (el) {
+                if (idx === d.k_mod_4) {
+                    el.className = 'bg-cyan-950/70 border-l-4 border-l-cyan-400 font-bold';
+                } else {
+                    el.className = idx % 2 === 0 ? 'bg-slate-900/60' : 'bg-slate-900/30';
+                }
+            }
+        });
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const roll = document.getElementById('rollInput').value.trim();
@@ -187,29 +212,17 @@
                 alert(d.error);
                 return;
             }
-            document.getElementById('badgeRoll').textContent = `Roll: ${d.roll}`;
-            document.getElementById('resK').textContent = d.k;
-            document.getElementById('resRow').textContent = `Row ${d.starting_row}`;
-            document.getElementById('resDims').textContent = `${d.box_width} × ${d.box_height}`;
-            document.getElementById('resAddr').textContent = d.base_addr;
-            document.getElementById('resWords').textContent = `${d.words_per_row} Word${d.words_per_row > 1 ? 's' : ''}`;
-            document.getElementById('resKMod3').textContent = `K mod 3 = ${d.k_mod_3}`;
-            document.getElementById('resFeature').textContent = d.feature_desc;
-
-            // Highlight table row
-            [0,1,2,3].forEach(idx => {
-                const el = document.getElementById(`row-k${idx}`);
-                if(el) {
-                    if(idx === d.k_mod_4) {
-                        el.className = 'bg-cyan-950/70 border-l-4 border-l-cyan-400';
-                    } else {
-                        el.className = idx % 2 === 0 ? 'bg-slate-900/60' : 'bg-slate-900/30';
-                    }
-                }
-            });
+            populateUI(d);
+            saveStudentState(d);
         } catch(err) {
             console.error(err);
         }
+    });
+
+    // Populate initial state from local storage or default
+    document.addEventListener('DOMContentLoaded', () => {
+        const saved = getSavedStudentState();
+        populateUI(saved);
     });
 </script>
 {% endblock %}

@@ -173,38 +173,56 @@
     const rollPopBadge = document.getElementById('rollPopBadge');
     const pressKeyBtn = document.getElementById('pressKeyBtn');
     const toggleStickBtn = document.getElementById('toggleStickBtn');
+    const screenCoords = document.getElementById('screenCoords');
 
-    // Box Parameters for Aman Kumar (Roll: 2501730172 -> K = 72)
-    const K = 72;
-    const BOX_X = 0;       // Left edge
-    const BOX_Y = K;       // Row 72
-    const BOX_W = 16;      // 16 * ((72%4) + 1) = 16 px
-    const BOX_H = 20;      // 20 rows (72..91)
+    // Retrieve active student parameters (dynamic roll number and K)
+    let student = getSavedStudentState();
+
+    function getBoxParams() {
+        return {
+            K: student.k !== undefined ? student.k : 72,
+            BOX_X: 0,
+            BOX_Y: student.starting_row !== undefined ? student.starting_row : 72,
+            BOX_W: student.box_width !== undefined ? student.box_width : 16,
+            BOX_H: student.box_height !== undefined ? student.box_height : 20,
+            roll: student.roll || '2501730172'
+        };
+    }
 
     let isKeyPressed = false;
     let isLocked = false;
 
     function renderScreen() {
+        const p = getBoxParams();
+
+        // Update info bar above canvas
+        if (screenCoords) {
+            screenCoords.textContent = `Box: Row ${p.BOX_Y}, Col 0 (${p.BOX_W}×${p.BOX_H}px)`;
+        }
+
         // Clear background to Hack screen white
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, 512, 256);
 
-        // Grid guideline for row 72 (subtle)
+        // Grid guideline for row K (subtle)
         ctx.strokeStyle = '#f1f5f9';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, 72);
-        ctx.lineTo(512, 72);
+        ctx.moveTo(0, p.BOX_Y);
+        ctx.lineTo(512, p.BOX_Y);
         ctx.stroke();
 
         if (isKeyPressed) {
-            // Draw Black Box at Row 72 on left edge
+            // Draw Black Box at Row K on left edge
             ctx.fillStyle = '#000000';
-            ctx.fillRect(BOX_X, BOX_Y, BOX_W, BOX_H);
+            ctx.fillRect(p.BOX_X, p.BOX_Y, p.BOX_W, p.BOX_H);
 
             // Update UI status
             statusPill.textContent = 'KEY ACTIVE (Box Rendered)';
             statusPill.className = 'text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800';
+            
+            // Update and show dynamic roll number pop badge
+            rollPopBadge.textContent = `🎉 ROLL NO: ${p.roll} (K=${p.K})`;
             rollPopBadge.classList.remove('hidden');
         } else {
             statusPill.textContent = 'IDLE (No Key)';
@@ -254,7 +272,16 @@
         }
     });
 
+    // Refresh state if changed
+    window.addEventListener('storage', () => {
+        student = getSavedStudentState();
+        renderScreen();
+    });
+
     // Initial render
-    renderScreen();
+    document.addEventListener('DOMContentLoaded', () => {
+        student = getSavedStudentState();
+        renderScreen();
+    });
 </script>
 {% endblock %}

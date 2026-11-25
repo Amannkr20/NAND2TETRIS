@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Part B - Python Assembler & Symbol Table | Hack Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/80 text-cyan-400 border border-cyan-800 mb-2">
+                PART B: Two-Pass Python Assembler
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+                Hack Assembly to Machine Code Compiler
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                Converts Hack Assembly (<code class="text-cyan-400 font-mono">.asm</code>) to 16-bit binary (<code class="text-cyan-400 font-mono">.hack</code>) with symbol resolution &amp; <code class="text-amber-400 font-mono">symbols.txt</code> (K mod 3 = 0).
+            </p>
+        </div>
+
+        <!-- Sample Selector Buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-400 font-mono">Load Sample:</span>
+            <button onclick="loadSample('Box')" class="px-2.5 py-1 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded border border-slate-700 transition-all">Box.asm</button>
+            <button onclick="loadSample('Add')" class="px-2.5 py-1 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-all">Add.asm</button>
+            <button onclick="loadSample('Max')" class="px-2.5 py-1 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-all">Max.asm</button>
+            <button onclick="loadSample('Rect')" class="px-2.5 py-1 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-all">Rect.asm</button>
+            <button onclick="loadSample('Pong')" class="px-2.5 py-1 text-xs font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 transition-all">Pong.asm</button>
+        </div>
+    </div>
+
+    <!-- Assembler Workspace Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Assembly Input (Left 5 cols) -->
+        <div class="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[650px]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                <span class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>📝</span> Assembly Code (.asm)
+                </span>
+                <span id="asmLineCount" class="text-[11px] font-mono text-slate-400">0 lines</span>
+            </div>
+
+            <textarea id="asmInput" class="flex-grow w-full bg-slate-950 text-slate-200 font-mono text-xs p-4 rounded-xl border border-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 resize-none leading-relaxed" spellcheck="false" placeholder="// Paste Hack Assembly (.asm) here..."></textarea>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400">Engine: <strong class="text-cyan-400">assembler.py</strong></span>
+                <button id="assembleBtn" onclick="runAssemble()" class="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold rounded-xl transition-all text-sm shadow-md flex items-center gap-1.5">
+                    <span>⚡ Compile to .hack</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Binary Output (Middle 4 cols) -->
+        <div class="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[650px]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                <span class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>0️⃣1️⃣</span> Binary Machine Code (.hack)
+                </span>
+                <span id="hackCountBadge" class="text-[11px] font-mono text-emerald-400 font-bold">0 instructions</span>
+            </div>
+
+            <textarea id="hackOutput" readonly class="flex-grow w-full bg-slate-950 text-emerald-400 font-mono text-xs p-4 rounded-xl border border-slate-800 focus:outline-none resize-none leading-relaxed" placeholder="// Compiled 16-bit binary instructions will appear here..."></textarea>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400 font-mono">Format: 16-bit binary</span>
+                <button onclick="copyHack()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 transition-all">
+                    📋 Copy Binary
+                </button>
+            </div>
+        </div>
+
+        <!-- Symbols Table & Feature Output (Right 3 cols) -->
+        <div class="lg:col-span-3 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-[650px]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                <span class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🏷️</span> symbols.txt
+                </span>
+                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                    K mod 3 = 0
+                </span>
+            </div>
+
+            <textarea id="symbolsOutput" readonly class="flex-grow w-full bg-slate-950 text-amber-300 font-mono text-xs p-3 rounded-xl border border-slate-800 focus:outline-none resize-none leading-relaxed" placeholder="// symbols.txt output (ROM labels + RAM variables)..."></textarea>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400">Assigned Feature</span>
+                <span class="text-[11px] font-mono text-emerald-400 font-bold">Saved to Disk</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadSample(name) {
+        try {
+            const res = await fetch(`/api/load-sample-asm?name=${name}`);
+            const d = await res.json();
+            if(d.code) {
+                document.getElementById('asmInput').value = d.code;
+                updateLineCount();
+                runAssemble();
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    function updateLineCount() {
+        const text = document.getElementById('asmInput').value;
+        const count = text.split('\n').length;
+        document.getElementById('asmLineCount').textContent = `${count} lines`;
+    }
+
+    document.getElementById('asmInput').addEventListener('input', updateLineCount);
+
+    async function runAssemble() {
+        const code = document.getElementById('asmInput').value;
+        if(!code.trim()) return;
+
+        const btn = document.getElementById('assembleBtn');
+        btn.innerHTML = '<span>Compiling...</span>';
+
+        try {
+            const res = await fetch('/api/assemble', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ code })
+            });
+            const d = await res.json();
+            if(d.error) {
+                alert(`Assembler Error: ${d.error}`);
+            } else {
+                document.getElementById('hackOutput').value = d.hack;
+                document.getElementById('symbolsOutput').value = d.symbols;
+                document.getElementById('hackCountBadge').textContent = `${d.instruction_count} instructions`;
+            }
+        } catch(e) {
+            alert('Failed to assemble: ' + e);
+        } finally {
+            btn.innerHTML = '<span>⚡ Compile to .hack</span>';
+        }
+    }
+
+    function copyHack() {
+        const val = document.getElementById('hackOutput').value;
+        if(!val) return;
+        navigator.clipboard.writeText(val);
+        alert('Copied .hack instructions to clipboard!');
+    }
+
+    // Load Box.asm on startup
+    window.addEventListener('DOMContentLoaded', () => {
+        loadSample('Box');
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,4 @@
+#!/bin/bash
+export PATH="/opt/homebrew/Cellar/openjdk/26.0.2/bin:$PATH"
+cd "$(dirname "$0")/nand2tetris_tools"
+java -classpath ":bin/classes:BuiltIn:bin/lib/Hack.jar:bin/lib/HackGUI.jar:bin/lib/Simulators.jar:bin/lib/SimulatorsGUI.jar:bin/lib/Compilers.jar" HardwareSimulatorMain "$@"

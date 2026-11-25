@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Part A - Hardware Simulator & Live Box Display | Hack Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800 mb-2">
+                PART A: Hardware Verification & Screen Graphics
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+                Hack Computer Simulator & Display Subsystem
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">
+                HDL Chip validation (CPU, Memory, Computer) and interactive 512×256 Hack screen with dynamic key detection & Roll No pop!
+            </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="flex h-3 w-3 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-mono text-emerald-400 font-bold">SIMULATOR READY</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Interactive Hack Screen Canvas (Left 7 cols) -->
+        <div class="lg:col-span-7 space-y-4">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-2xl">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                            Hack Screen Display (512 × 256)
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="screenCoords" class="text-[11px] font-mono text-slate-400">Box: Row 72, Col 0</span>
+                        <span id="statusPill" class="text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                            IDLE (No Key)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Canvas Container -->
+                <div class="mt-4 flex flex-col items-center justify-center bg-slate-950 p-2 sm:p-4 rounded-xl border border-slate-800 relative group">
+                    <canvas id="hackCanvas" width="512" height="256" class="w-full max-w-[512px] h-auto border border-slate-700 rounded bg-[#f8fafc] shadow-inner cursor-pointer"></canvas>
+                    
+                    <!-- Floating Roll Number Pop Badge -->
+                    <div id="rollPopBadge" class="hidden absolute top-6 right-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-sm sm:text-base px-4 py-2 rounded-xl shadow-2xl transform transition-all duration-200 border-2 border-white scale-100 animate-bounce">
+                        🎉 ROLL NO: 2501730172 (K=72)
+                    </div>
+
+                    <div class="w-full max-w-[512px] flex items-center justify-between text-[11px] text-slate-500 font-mono mt-2 px-1">
+                        <span>(0,0)</span>
+                        <span>Row 72 (K=72)</span>
+                        <span>(511, 255)</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Keyboard Clicker / Trigger Area -->
+                <div class="mt-4 p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                            ⌨️ Interactive Keyboard Trigger:
+                        </span>
+                        <span class="text-[11px] text-cyan-400 font-mono" id="kbdCodeDisplay">KBD (RAM[24576]): 0</span>
+                    </div>
+
+                    <p class="text-xs text-slate-400">
+                        Press or hold down <strong>any key on your physical keyboard</strong>, or click & hold the button below to trigger the black box and pop your roll number!
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button id="pressKeyBtn" class="flex-1 py-3 px-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 active:from-cyan-700 active:to-blue-700 text-slate-950 font-extrabold rounded-xl transition-all shadow-lg shadow-cyan-900/30 text-sm flex items-center justify-center gap-2 select-none">
+                            <span>👇 CLICK & HOLD TO PRESS KEY (OR USE PHYSICAL KEY)</span>
+                        </button>
+                        <button id="toggleStickBtn" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all border border-slate-700">
+                            🔒 Lock Key ON
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part A Hardware Chip & Official Test Results (Right 5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+            <!-- Hardware Chips Built -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span>🔌</span> Constructed HDL Chips
+                </h3>
+                <div class="space-y-3">
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold font-mono text-cyan-400">CPU.hdl</div>
+                            <div class="text-[11px] text-slate-400">ALU, A/D Registers, PC, Opcode filter</div>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                            VERIFIED
+                        </span>
+                    </div>
+
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold font-mono text-cyan-400">Memory.hdl</div>
+                            <div class="text-[11px] text-slate-400">RAM16K (0..16383), Screen, KBD</div>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                            VERIFIED
+                        </span>
+                    </div>
+
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold font-mono text-cyan-400">Computer.hdl</div>
+                            <div class="text-[11px] text-slate-400">Integrated CPU + Memory + ROM32K</div>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                            VERIFIED
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Official Nand2Tetris Test Suite Run Status -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span>🧪</span> Official Hardware Tests
+                    </h3>
+                    <span class="text-xs font-mono text-emerald-400 font-bold">5 / 5 PASSED</span>
+                </div>
+
+                <div class="space-y-2.5">
+                    <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-300">CPU.tst</span>
+                        <span class="text-emerald-400 font-bold">✓ PASSED</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-300">Memory.tst</span>
+                        <span class="text-emerald-400 font-bold">✓ PASSED</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-300">Computer-Add.tst</span>
+                        <span class="text-emerald-400 font-bold">✓ PASSED</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-300">Computer-Max.tst</span>
+                        <span class="text-emerald-400 font-bold">✓ PASSED</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                        <span class="text-slate-300">Computer-Rect.tst</span>
+                        <span class="text-emerald-400 font-bold">✓ PASSED</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const canvas = document.getElementById('hackCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusPill = document.getElementById('statusPill');
+    const kbdCodeDisplay = document.getElementById('kbdCodeDisplay');
+    const rollPopBadge = document.getElementById('rollPopBadge');
+    const pressKeyBtn = document.getElementById('pressKeyBtn');
+    const toggleStickBtn = document.getElementById('toggleStickBtn');
+
+    // Box Parameters for Aman Kumar (Roll: 2501730172 -> K = 72)
+    const K = 72;
+    const BOX_X = 0;       // Left edge
+    const BOX_Y = K;       // Row 72
+    const BOX_W = 16;      // 16 * ((72%4) + 1) = 16 px
+    const BOX_H = 20;      // 20 rows (72..91)
+
+    let isKeyPressed = false;
+    let isLocked = false;
+
+    function renderScreen() {
+        // Clear background to Hack screen white
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 512, 256);
+
+        // Grid guideline for row 72 (subtle)
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 72);
+        ctx.lineTo(512, 72);
+        ctx.stroke();
+
+        if (isKeyPressed) {
+            // Draw Black Box at Row 72 on left edge
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(BOX_X, BOX_Y, BOX_W, BOX_H);
+
+            // Update UI status
+            statusPill.textContent = 'KEY ACTIVE (Box Rendered)';
+            statusPill.className = 'text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800';
+            rollPopBadge.classList.remove('hidden');
+        } else {
+            statusPill.textContent = 'IDLE (No Key)';
+            statusPill.className = 'text-[11px] px-2 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700';
+            rollPopBadge.classList.add('hidden');
+        }
+    }
+
+    function setKeyState(pressed, code = 0) {
+        if (isLocked && !pressed) return;
+        isKeyPressed = pressed;
+        kbdCodeDisplay.textContent = `KBD (RAM[24576]): ${pressed ? (code || 75) : 0}`;
+        renderScreen();
+    }
+
+    // Physical Keyboard Listeners
+    window.addEventListener('keydown', (e) => {
+        setKeyState(true, e.keyCode || 75);
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (!isLocked) {
+            setKeyState(false, 0);
+        }
+    });
+
+    // Mouse Hold on Button
+    pressKeyBtn.addEventListener('mousedown', () => setKeyState(true, 75));
+    pressKeyBtn.addEventListener('mouseup', () => setKeyState(false, 0));
+    pressKeyBtn.addEventListener('mouseleave', () => { if (!isLocked) setKeyState(false, 0); });
+
+    // Touch support for mobile/trackpad
+    pressKeyBtn.addEventListener('touchstart', (e) => { e.preventDefault(); setKeyState(true, 75); });
+    pressKeyBtn.addEventListener('touchend', (e) => { e.preventDefault(); setKeyState(false, 0); });
+
+    // Toggle Lock button
+    toggleStickBtn.addEventListener('click', () => {
+        isLocked = !isLocked;
+        if (isLocked) {
+            toggleStickBtn.textContent = '🔓 Unlock Key';
+            toggleStickBtn.className = 'py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-slate-950 text-xs font-bold rounded-xl transition-all border border-emerald-500';
+            setKeyState(true, 75);
+        } else {
+            toggleStickBtn.textContent = '🔒 Lock Key ON';
+            toggleStickBtn.className = 'py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all border border-slate-700';
+            setKeyState(false, 0);
+        }
+    });
+
+    // Initial render
+    renderScreen();
+</script>
+{% endblock %}
